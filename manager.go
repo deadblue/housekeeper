@@ -29,14 +29,14 @@ Exmaple:
 	}
 	// TODO: Works with foo
 */
-func (m *Manager) Get(value any) (err error) {
-	rv := reflect.ValueOf(value)
+func (m *Manager) Get(ptr any) (err error) {
+	rv := reflect.ValueOf(ptr)
 	rt := rv.Type()
 	if err = checkTypeForGet(rt); err != nil {
 		return
 	}
 	if v, err := m.getValue(rt.Elem()); err == nil {
-		rv.Set(v.Addr())
+		rv.Elem().Set(v)
 	}
 	return
 }
@@ -110,7 +110,7 @@ func (m *Manager) Close() (err error) {
 	return
 }
 
-// GetFrom gets value from housekeeper with generic support.
+// GetFrom gets value from manager with generic.
 func GetFrom[V any](m *Manager) (value *V, err error) {
 	rt := reflect.TypeFor[*V]()
 	if v, err := m.getValue(rt); err == nil {
@@ -119,7 +119,7 @@ func GetFrom[V any](m *Manager) (value *V, err error) {
 	return
 }
 
-// New creates a housekeeper for you.
+// New creates a manager for you.
 func New() *Manager {
 	return &Manager{
 		cache: make(map[string]reflect.Value),
