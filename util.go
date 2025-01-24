@@ -39,7 +39,11 @@ func getCacheKey(t reflect.Type) string {
 func findError(vals []reflect.Value) error {
 	for _, val := range vals {
 		if val.Type().AssignableTo(errorType) {
-			return val.Interface().(error)
+			if val.IsNil() {
+				return nil
+			} else {
+				return val.Interface().(error)
+			}
 		}
 	}
 	return nil
