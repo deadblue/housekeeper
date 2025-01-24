@@ -50,7 +50,7 @@ func (m *Manager) Put(valuePtr any) (err error) {
 	if err = checkType(t); err != nil {
 		return
 	}
-	cacheKey := getCacheKey(t.Elem())
+	cacheKey := getCacheKey(t)
 	m.cache[cacheKey] = reflect.ValueOf(valuePtr)
 	return
 }
