@@ -14,41 +14,44 @@ type Manager struct {
 }
 
 /*
-Gets finds and returns value from housekeeper.
+Get returns value from manager.
 
-The value parameters should be a pointer to pointer to target type.
+The ptrPtr should be a pointer to pointer to target value type.
 
-Exmaple:
+For exmaple:
 
 	type Foo struct {}
 
 	mgr := New()
+	defer mgr.Close()
+
 	var foo *Foo
 	if err := mgr.Get(&foo); err != nil {
 		log.Fatal(err)
 	}
 	// TODO: Works with foo
 */
-func (m *Manager) Get(ptr any) (err error) {
-	rv := reflect.ValueOf(ptr)
-	rt := rv.Type()
-	if err = checkTypeForGet(rt); err != nil {
+func (m *Manager) Get(ptrPtr any) (err error) {
+	pv := reflect.ValueOf(ptrPtr)
+	pt := pv.Type()
+	if err = checkTypeForGet(pt); err != nil {
 		return
 	}
-	if v, err := m.getValue(rt.Elem()); err == nil {
-		rv.Elem().Set(v)
+	v, err := m.getValue(pt.Elem())
+	if err == nil {
+		pv.Elem().Set(v)
 	}
 	return
 }
 
-// Put puts value to Housekeeper cache.
-func (m *Manager) Put(value any) (err error) {
-	rt := reflect.TypeOf(value)
-	if err = checkType(rt); err != nil {
+// Put puts value to manager.
+func (m *Manager) Put(valuePtr any) (err error) {
+	t := reflect.TypeOf(valuePtr)
+	if err = checkType(t); err != nil {
 		return
 	}
-	cacheKey := getCacheKey(rt.Elem())
-	m.cache[cacheKey] = reflect.ValueOf(value)
+	cacheKey := getCacheKey(t.Elem())
+	m.cache[cacheKey] = reflect.ValueOf(valuePtr)
 	return
 }
 
@@ -72,7 +75,7 @@ func (m *Manager) getValue(t reflect.Type) (v reflect.Value, err error) {
 func (m *Manager) newValue(t reflect.Type) (v reflect.Value, err error) {
 	v = reflect.New(t.Elem())
 	if err = m.initValue(t, v); err != nil {
-		v.SetZero()
+		v = reflect.Zero(t)
 	}
 	return
 }
@@ -99,6 +102,7 @@ func (m *Manager) initValue(t reflect.Type, v reflect.Value) (err error) {
 	return findError(im.Func.Call(args))
 }
 
+// Close closes manager, all values managed by manager will be closed.
 func (m *Manager) Close() (err error) {
 	for _, rv := range m.cache {
 		v := rv.Interface()
@@ -113,8 +117,9 @@ func (m *Manager) Close() (err error) {
 // GetFrom gets value from manager with generic.
 func GetFrom[V any](m *Manager) (value *V, err error) {
 	rt := reflect.TypeFor[*V]()
-	if v, err := m.getValue(rt); err == nil {
-		value = v.Interface().(*V)
+	rv, err := m.getValue(rt)
+	if err == nil {
+		value = rv.Interface().(*V)
 	}
 	return
 }
