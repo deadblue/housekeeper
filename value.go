@@ -30,6 +30,13 @@ func (m *Manager) makeValue(pt reflect.Type) (pv reflect.Value, err error) {
 	if pv, err = m.provideValue(pt); err != nil {
 		return
 	}
+	// Autowire struct fields
+	if elemType := pt.Elem(); elemType.Kind() == reflect.Struct {
+		if err = m.structAutowireFields(elemType, pv.Elem()); err != nil {
+			pv = reflect.Zero(pt)
+			return
+		}
+	}
 	// Call Init method on pv when present
 	if err = m.initValue(pt, pv); err != nil {
 		pv = reflect.Zero(pt)
@@ -49,7 +56,7 @@ func (m *Manager) initValue(pt reflect.Type, pv reflect.Value) (err error) {
 	args := make([]reflect.Value, argCount)
 	args[0] = pv
 	for i := 1; i < argCount; i++ {
-		// TODO: Handle circular-reference
+		// TODO: Circular-reference checking
 		args[i], err = m.getValue(ft.In(i))
 		if err != nil {
 			return

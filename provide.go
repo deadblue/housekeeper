@@ -49,7 +49,7 @@ func (m *Manager) provideValue(pt reflect.Type) (pv reflect.Value, err error) {
 	argCount := provType.NumIn()
 	args := make([]reflect.Value, argCount)
 	for i := range argCount {
-		// TODO: Handle circular-reference
+		// TODO: Circular-reference checking
 		args[i], err = m.getValue(provType.In(i))
 		if err != nil {
 			err = errors.Join(
