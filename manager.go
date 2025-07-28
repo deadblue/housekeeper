@@ -10,6 +10,8 @@ type Manager struct {
 	cache map[string]reflect.Value
 	// Provider registry
 	providers map[string]reflect.Value
+	// Configurable options
+	options options
 }
 
 /*
@@ -77,12 +79,14 @@ func GetFrom[V any](m *Manager) (value *V, err error) {
 }
 
 // New creates a manager for you.
-func New() *Manager {
+func New(opts ...Option) *Manager {
 	// Create manager
 	return &Manager{
 		// Initialize cache
 		cache: make(map[string]reflect.Value),
 		// Initialize provider registry
 		providers: make(map[string]reflect.Value),
+		// Save options
+		options: mergeOptions(opts...),
 	}
 }

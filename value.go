@@ -4,10 +4,6 @@ import (
 	"reflect"
 )
 
-const (
-	_MethodInit = "Init"
-)
-
 // getValue tries to get value from cache, or make value and put it to cache
 // when absent.
 //
@@ -46,7 +42,7 @@ func (m *Manager) makeValue(pt reflect.Type) (pv reflect.Value, err error) {
 
 func (m *Manager) initValue(pt reflect.Type, pv reflect.Value) (err error) {
 	// Find init method
-	im, found := pt.MethodByName(_MethodInit)
+	im, found := pt.MethodByName(m.options.InitMethodName)
 	if !found {
 		return
 	}
