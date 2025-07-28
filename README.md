@@ -1,3 +1,3 @@
 # Housekeeper
 
-Object manager for your go project.
+Simple dependency injection and lifecycle manager for your go project.
