@@ -27,7 +27,9 @@ func (m *Manager) getValue(pt reflect.Type) (pv reflect.Value, err error) {
 }
 
 func (m *Manager) makeValue(pt reflect.Type) (pv reflect.Value, err error) {
-	pv = reflect.New(pt.Elem())
+	if pv, err = m.provideValue(pt); err != nil {
+		return
+	}
 	// Call Init method on pv when present
 	if err = m.initValue(pt, pv); err != nil {
 		pv = reflect.Zero(pt)

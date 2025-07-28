@@ -8,6 +8,8 @@ import (
 type Manager struct {
 	// Value cache
 	cache map[string]reflect.Value
+	// Provider registry
+	providers map[string]reflect.Value
 }
 
 /*
@@ -80,5 +82,7 @@ func New() *Manager {
 	return &Manager{
 		// Initialize cache
 		cache: make(map[string]reflect.Value),
+		// Initialize provider registry
+		providers: make(map[string]reflect.Value),
 	}
 }
