@@ -68,13 +68,9 @@ func (m *Manager) Close() (err error) {
 	return
 }
 
-// GetFrom gets value from manager with generic.
+// GetFrom gets value from manager with generic support.
 func GetFrom[V any](m *Manager) (value *V, err error) {
-	rt := reflect.TypeFor[*V]()
-	rv, err := m.getValue(rt)
-	if err == nil {
-		value = rv.Interface().(*V)
-	}
+	err = m.Get(&value)
 	return
 }
 
