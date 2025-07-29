@@ -30,15 +30,15 @@ func (m *Manager) Provide(provider any) (err error) {
 		return errProviderShouldReturnPtr
 	}
 	// Register provider
-	providerKey := getTypeName(valueType)
-	m.providers[providerKey] = rv
+	typeName := getTypeName(valueType)
+	m.providers[typeName] = rv
 	return
 }
 
-func (m *Manager) provideValue(pt reflect.Type) (pv reflect.Value, err error) {
+func (m *Manager) provideValue(pt reflect.Type, stack ...string) (pv reflect.Value, err error) {
 	// Search provider
-	providerKey := getTypeName(pt)
-	provider, found := m.providers[providerKey]
+	typeName := stack[0]
+	provider, found := m.providers[typeName]
 	if !found {
 		// Simply uses new for target type
 		pv = reflect.New(pt.Elem())
@@ -49,11 +49,10 @@ func (m *Manager) provideValue(pt reflect.Type) (pv reflect.Value, err error) {
 	argCount := provType.NumIn()
 	args := make([]reflect.Value, argCount)
 	for i := range argCount {
-		// TODO: Circular-reference checking
-		args[i], err = m.getValue(provType.In(i))
+		args[i], err = m.getValue(provType.In(i), stack...)
 		if err != nil {
 			err = errors.Join(
-				fmt.Errorf("can not prepare argument #%d for provider: %s", i, getTypeName(pt)),
+				fmt.Errorf("can not resolve argument #%d for provider: %s", i, getTypeName(provType)),
 				err,
 			)
 			return

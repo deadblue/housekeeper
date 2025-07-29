@@ -11,8 +11,8 @@ const (
 	_TagAutowire = "autowire"
 )
 
-func (m *Manager) structAutowireFields(st reflect.Type, sv reflect.Value) (err error) {
-	typeName := fmt.Sprintf("%s/%s", st.PkgPath(), st.Name())
+func (m *Manager) wireStructFields(st reflect.Type, sv reflect.Value, stack ...string) (err error) {
+	typeName := stack[0]
 	for index := range st.NumField() {
 		ft := st.Field(index)
 		// Skip non-autowire field
@@ -25,13 +25,12 @@ func (m *Manager) structAutowireFields(st reflect.Type, sv reflect.Value) (err e
 			continue
 		}
 		// Assign value to field
-		// TODO: Circular-reference checking
-		if val, err := m.getValue(ft.Type); err == nil {
+		if val, err := m.getValue(ft.Type, stack...); err == nil {
 			fv.Set(val)
 		} else {
 			// Breaks for loop and returns error
 			return errors.Join(
-				fmt.Errorf("can not get value for field: %s.%s", typeName, ft.Name),
+				fmt.Errorf("can not resolve field value: %s.%s", typeName, ft.Name),
 				err,
 			)
 		}
