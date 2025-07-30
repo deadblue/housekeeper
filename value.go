@@ -2,6 +2,7 @@ package housekeeper
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"slices"
 )
@@ -35,22 +36,26 @@ func (m *Manager) makeValue(pt reflect.Type, stack ...string) (pv reflect.Value,
 		err = errCircularReference
 		return
 	}
-
 	nextStack := append([]string{typeName}, stack...)
+
+	// Provide value
 	if pv, err = m.provideValue(pt, nextStack...); err != nil {
 		return
 	}
+	// Reset pv when error is not nil
+	defer func() {
+		if err != nil {
+			pv = reflect.Zero(pt)
+		}
+	}()
 	// Autowire struct fields
 	if elemType := pt.Elem(); elemType.Kind() == reflect.Struct {
 		if err = m.wireStructFields(elemType, pv.Elem(), nextStack...); err != nil {
-			pv = reflect.Zero(pt)
 			return
 		}
 	}
 	// Call Init method on pv when present
-	if err = m.initValue(pt, pv, nextStack...); err != nil {
-		pv = reflect.Zero(pt)
-	}
+	err = m.initValue(pt, pv, nextStack...)
 	return
 }
 
@@ -61,14 +66,19 @@ func (m *Manager) initValue(pt reflect.Type, pv reflect.Value, stack ...string) 
 		return
 	}
 	// Prepare method argument
-	ft := im.Func.Type()
-	argCount := ft.NumIn()
+	argCount := im.Type.NumIn()
 	args := make([]reflect.Value, argCount)
-	args[0] = pv
-	for i := 1; i < argCount; i++ {
-		args[i], err = m.getValue(ft.In(i), stack...)
-		if err != nil {
-			return
+	for i := range argCount {
+		if i == 0 {
+			args[i] = pv
+		} else {
+			args[i], err = m.getValue(im.Type.In(i), stack...)
+			if err != nil {
+				return fmt.Errorf(
+					"resolve method \"%s.%s\" argument #%d failed: %w",
+					stack[0], im.Name, i, err,
+				)
+			}
 		}
 	}
 	// Call init method

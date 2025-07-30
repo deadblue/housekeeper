@@ -17,17 +17,18 @@ func (m *Manager) Provide(provider any) (err error) {
 	// Validate provider
 	rv := reflect.ValueOf(provider)
 	rt := rv.Type()
+	provName := getTypeName(rt)
 	// Check provider type
 	if rt.Kind() != reflect.Func {
-		return errProviderShouldBeFunction
+		return fmt.Errorf("invalid provider \"%s\": %w", provName, errProviderShouldBeFunction)
 	}
 	// Check provider function signature
 	if rt.NumOut() == 0 {
-		return errProviderShouldReturn
+		return fmt.Errorf("invalid provider \"%s\": %w", provName, errProviderShouldReturn)
 	}
 	valueType := rt.Out(0)
 	if assertPtrType(valueType) != nil {
-		return errProviderShouldReturnPtr
+		return fmt.Errorf("invalid provider \"%s\": %w", provName, errProviderShouldReturnPtr)
 	}
 	// Register provider
 	typeName := getTypeName(valueType)
@@ -51,9 +52,9 @@ func (m *Manager) provideValue(pt reflect.Type, stack ...string) (pv reflect.Val
 	for i := range argCount {
 		args[i], err = m.getValue(provType.In(i), stack...)
 		if err != nil {
-			err = errors.Join(
-				fmt.Errorf("can not resolve argument #%d for provider: %s", i, getTypeName(provType)),
-				err,
+			err = fmt.Errorf(
+				"resolve provider %s argument #%d failed: %w",
+				getTypeName(provType), i, err,
 			)
 			return
 		}

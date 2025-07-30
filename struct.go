@@ -1,7 +1,6 @@
 package housekeeper
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"reflect"
@@ -29,9 +28,9 @@ func (m *Manager) wireStructFields(st reflect.Type, sv reflect.Value, stack ...s
 			fv.Set(val)
 		} else {
 			// Breaks for loop and returns error
-			return errors.Join(
-				fmt.Errorf("can not resolve field value: %s.%s", typeName, ft.Name),
-				err,
+			return fmt.Errorf(
+				"resolve field \"%s.%s\" value failed: %w",
+				typeName, ft.Name, err,
 			)
 		}
 	}
