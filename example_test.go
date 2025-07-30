@@ -1,58 +1,80 @@
-package housekeeper
+package housekeeper_test
 
 import (
-	"errors"
+	"fmt"
 	"log"
+
+	"github.com/deadblue/housekeeper"
 )
 
-type Bar struct {
-	state string
+type FooService struct{}
+
+func (f *FooService) GetName() string {
+	return "world"
 }
 
-func (b *Bar) Init() {
-	b.state = "bar is inited"
+func (f *FooService) Close() error {
+	fmt.Println("Shutdown foo service.")
+	return nil
 }
 
-func (b *Bar) Close() (err error) {
-	println("close bar")
+type BarService struct{}
+
+func (b *BarService) Greet(name string) {
+	fmt.Printf("Hello, %s!\n", name)
+}
+
+// Custom provider for BarService.
+// provider function can be unexported.
+func newBarService() (bar *BarService, err error) {
+	fmt.Println("Provide BarService through custom provider.")
+	bar = &BarService{}
+	// You can return error when provide BarService failed
 	return
 }
 
-type Foo struct {
-	bar *Bar
+type App struct {
+	// FooService will be auto-wired by housekeeper.
+	// Autowire field should be exported.
+	Foo *FooService `autowire:""`
+	// Bar service will be injected in init method
+	bar *BarService
 }
 
-func (f *Foo) Init(bar *Bar) (err error) {
-	if bar == nil {
-		err = errors.New("Bar is nil!")
+// Init method will be called by housekeeper.
+func (a *App) Init(bar *BarService) (err error) {
+	fmt.Println("Initialize app.")
+	a.bar = bar
+	// You can return error init failed
+	return nil
+}
+
+func (a *App) Run() {
+	name := a.Foo.GetName()
+	a.bar.Greet(name)
+}
+
+func Example() {
+	mgr := housekeeper.New()
+	// Close manager
+	defer mgr.Close()
+
+	// Register custom provider for BarService
+	if err := mgr.Provide(newBarService); err != nil {
+		log.Fatalf("Register provider failed: %s", err)
+	}
+
+	// Assemble app and run it
+	var app *App
+	if err := mgr.Get(&app); err != nil {
+		log.Fatalf("Get app value failed: %s\n", err)
 	} else {
-		f.bar = bar
+		app.Run()
 	}
-	return
-}
 
-func (f *Foo) PrintBarState() {
-	println(f.bar.state)
-}
-
-func ExmapleGetFrom() {
-	mgr := New()
-	defer mgr.Close()
-
-	foo, err := GetFrom[Foo](mgr)
-	if err != nil {
-		log.Fatalf("Get foo failed: %s", err)
-	}
-	foo.PrintBarState()
-}
-
-func ExmapleManager_Get() {
-	mgr := New()
-	defer mgr.Close()
-
-	var foo *Foo
-	if err := mgr.Get(&foo); err != nil {
-		log.Fatalf("Get foo failed: %s", err)
-	}
-	foo.PrintBarState()
+	// Output:
+	// Provide BarService through custom provider.
+	// Initialize app.
+	// Hello, world!
+	// Shutdown foo service.
 }

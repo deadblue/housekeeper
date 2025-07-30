@@ -14,24 +14,8 @@ type Manager struct {
 	options options
 }
 
-/*
-Get returns value from manager.
-
-The ptrPtr should be a pointer to pointer to target value type.
-
-For exmaple:
-
-	type Foo struct {}
-
-	mgr := New()
-	defer mgr.Close()
-
-	var foo *Foo
-	if err := mgr.Get(&foo); err != nil {
-		log.Fatal(err)
-	}
-	// TODO: Works with foo
-*/
+// Get returns value from manager.
+// The ptrptr should be a pointer to pointer to target value type.
 func (m *Manager) Get(ptrptr any) (err error) {
 	pv := reflect.ValueOf(ptrptr)
 	pt := pv.Type()
@@ -45,7 +29,8 @@ func (m *Manager) Get(ptrptr any) (err error) {
 	return
 }
 
-// Put puts value to manager.
+// Put puts value to manager, ptr should be a pointer to value.
+// Caller can manually put some values into manager, such as configuration, etc.
 func (m *Manager) Put(ptr any) (err error) {
 	pt := reflect.TypeOf(ptr)
 	if err = assertPtrType(pt); err != nil {
@@ -56,7 +41,7 @@ func (m *Manager) Put(ptr any) (err error) {
 	return
 }
 
-// Close closes manager, all values managed by manager will be closed.
+// Close closes the manager, and all managed values.
 func (m *Manager) Close() (err error) {
 	for _, rv := range m.cache {
 		v := rv.Interface()
@@ -74,7 +59,7 @@ func GetFrom[V any](m *Manager) (value *V, err error) {
 	return
 }
 
-// New creates a manager for you.
+// New creates a value manager.
 func New(opts ...Option) *Manager {
 	// Create manager
 	return &Manager{
