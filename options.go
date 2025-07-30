@@ -2,6 +2,7 @@ package housekeeper
 
 import (
 	"log"
+	"unicode"
 )
 
 const (
@@ -29,11 +30,20 @@ func mergeOptions(opts ...Option) options {
 		switch opt := opt.(type) {
 		case InitMethodOption:
 			if name := string(opt); name != "" {
-				result.InitMethodName = name
+				if isExportable(name) {
+					result.InitMethodName = name
+				} else {
+					log.Printf("Can not use unexported method \"%s\" as init method", name)
+				}
 			}
 		default:
 			log.Printf("Unsupported option: %v", opt)
 		}
 	}
 	return result
+}
+
+func isExportable(s string) bool {
+	var chs = []rune(s)
+	return len(chs) > 0 && unicode.IsUpper(chs[0])
 }
