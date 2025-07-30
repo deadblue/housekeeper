@@ -36,6 +36,15 @@ func (m *Manager) Provide(provider any) (err error) {
 	return
 }
 
+// MustProvide registers several providers to manager, all errors will be ignored.
+//
+// Use this method ONLY when you are sure all providers are valid.
+func (m *Manager) MustProvide(providers ...any) {
+	for _, provider := range providers {
+		m.Provide(provider)
+	}
+}
+
 func (m *Manager) provideValue(pt reflect.Type, stack ...string) (pv reflect.Value, err error) {
 	// Search provider
 	typeName := stack[0]

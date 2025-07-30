@@ -25,6 +25,12 @@ func Provide(provider any) (err error) {
 	return defaultManager.Provide(provider)
 }
 
+// MustProvide registers several providers to default manager, all errors will
+// be ignored.
+func MustProvide(providers ...any) {
+	defaultManager.MustProvide(providers...)
+}
+
 // Close closes default manager.
 func Close() error {
 	return defaultManager.Close()
