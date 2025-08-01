@@ -20,13 +20,18 @@ func Put(ptr any) error {
 	return defaultManager.Put(ptr)
 }
 
+// MustPut puts several values to default manager, and ignores all errors.
+func MustPut(ptrs ...any) {
+	defaultManager.MustProvide(ptrs...)
+}
+
 // Provide registers type provider to default manager.
-func Provide(provider any) (err error) {
+func Provide(provider any) error {
 	return defaultManager.Provide(provider)
 }
 
-// MustProvide registers several providers to default manager, all errors will
-// be ignored.
+// MustProvide registers several type providers to default manager, and ignores
+// all errors.
 func MustProvide(providers ...any) {
 	defaultManager.MustProvide(providers...)
 }

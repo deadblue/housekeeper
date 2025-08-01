@@ -15,7 +15,7 @@ type Manager struct {
 }
 
 // Get returns value from manager.
-// The ptrptr should be a pointer to pointer to target value type.
+// The ptrptr should be a pointer to pointer to target value.
 func (m *Manager) Get(ptrptr any) (err error) {
 	pv := reflect.ValueOf(ptrptr)
 	pt := pv.Type()
@@ -29,8 +29,8 @@ func (m *Manager) Get(ptrptr any) (err error) {
 	return
 }
 
-// Put puts value to manager, ptr should be a pointer to value.
-// Caller can manually put some values into manager, such as configuration, etc.
+// Put puts value to manager.
+// The ptr should be a pointer to value.
 func (m *Manager) Put(ptr any) (err error) {
 	pt := reflect.TypeOf(ptr)
 	if err = assertPtrType(pt); err != nil {
@@ -39,6 +39,14 @@ func (m *Manager) Put(ptr any) (err error) {
 	cacheKey := getTypeName(pt)
 	m.cache[cacheKey] = reflect.ValueOf(ptr)
 	return
+}
+
+// MustPut puts several values to manager, invalid values will be skipped, and
+// all errors will be ignored.
+func (m *Manager) MustPut(ptrs ...any) {
+	for _, ptr := range ptrs {
+		m.Put(ptr)
+	}
 }
 
 // Close closes the manager, and all managed values.
