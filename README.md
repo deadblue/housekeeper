@@ -1,6 +1,7 @@
 # Housekeeper
 
-Lightweight dependency-injection and lifecycle manager for your go project.
+A lightweight, reflection-based dependency-injection and lifecycle management 
+framework.
 
 ## Example
 
@@ -57,6 +58,9 @@ func main() {
     if err := mgr.Provide(newBarService); err != nil {
         log.Printf("Register privoder failed: %s", err)
     }
+    // Or call MustProvide when you want to register several providers or 
+    // ignore the errors.
+    // mgr.MustProvide(newBarService)
 
     var app *App
     if err := mgr.Get(&app); err != nil {
@@ -70,22 +74,28 @@ func main() {
 
 ### Initialize
 
-Housekeeper manager will automatically make dependent values follow this steps:
+Housekeeper manager resolve values follow this steps:
 
-1. Call provider when present, or simply call builtin `new()` function.
-2. Automatically wire field values which has `autowire` tag.
-3. Call `Init` method on target value when defined.
+1. Retrieve value by type from cache. When found, return it.
+2. When not found, follow this steps to make it:
+    1. Call provider for type when present, or simply new it.
+    2. Automatically wire field values which has `autowire` tag.
+    3. Call `Init` method on target value when defined.
+    4. Cache made value to internal cache.
+3. Repeat these steps for arguments of provider function or `Init` method, and 
+values for`autowire` field.
 
-The arguments of provider or `Init` method, and wired field values will be 
-automatically resolved by manager.
-
-The made values will be cached by manager, in other words, all of them are 
-singleton.
+> You can custom `Init` method name through `InitMethodOption` when making manager.
 
 ### Fianlize
 
 During manager closing, all managed values that implements `io.Closer` will be 
 closed, developer can release resources in its `Close` method.
+
+## Limitation
+
+1. All values managed by housekeeper will be cached, in other words, they are SINGLETON.
+2. You SHOULD declare dependent value in pointer type.
 
 ## License
 

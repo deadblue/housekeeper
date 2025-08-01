@@ -13,6 +13,7 @@ func (f *FooService) GetName() string {
 	return "world"
 }
 
+// Close method will be called during housekeeper manager closing.
 func (f *FooService) Close() error {
 	fmt.Println("Shutdown foo service.")
 	return nil
@@ -25,7 +26,6 @@ func (b *BarService) Greet(name string) {
 }
 
 // Custom provider for BarService.
-// provider function can be unexported.
 func newBarService() (bar *BarService, err error) {
 	fmt.Println("Provide BarService through custom provider.")
 	bar = &BarService{}
@@ -34,24 +34,25 @@ func newBarService() (bar *BarService, err error) {
 }
 
 type App struct {
-	// FooService will be auto-wired by housekeeper.
+	// Foo service will be assigned in Init method.
+	foo *FooService
+	// Bar field with autowre tag will be automatically assigned by housekeeper.
 	// Autowire field should be exported.
-	Foo *FooService `autowire:""`
-	// Bar service will be injected in init method
-	bar *BarService
+	Bar *BarService `autowire:""`
 }
 
-// Init method will be called by housekeeper.
-func (a *App) Init(bar *BarService) (err error) {
-	fmt.Println("Initialize app.")
-	a.bar = bar
+// Init method will be called by housekeeper during making App value.
+// Init method should be exported.
+func (a *App) Init(foo *FooService) (err error) {
+	fmt.Println("Initialize app with foo service.")
+	a.foo = foo
 	// You can return error init failed
 	return nil
 }
 
 func (a *App) Run() {
-	name := a.Foo.GetName()
-	a.bar.Greet(name)
+	name := a.foo.GetName()
+	a.Bar.Greet(name)
 }
 
 func Example() {
@@ -74,7 +75,7 @@ func Example() {
 
 	// Output:
 	// Provide BarService through custom provider.
-	// Initialize app.
+	// Initialize app with foo service.
 	// Hello, world!
 	// Shutdown foo service.
 }

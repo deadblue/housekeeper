@@ -13,6 +13,26 @@ var (
 )
 
 // Provide registers type provider to manager.
+//
+// # Specification:
+//
+//   - Provider should be function.
+//   - Provider function must have at least one result.
+//   - The first result should be a pointer type, it will be treated as target value type.
+//   - The second or later result can be an error type, it will be treated as providing error.
+//   - When the function has parameters, all parameter types should be pointer type.
+//   - The function can not have a variadic parameter.
+//
+// # Example:
+//
+// Valid providers:
+//   - func () *ResultType
+//   - func (arg1 *Arg1Type, arg2 *Arg2Type) (*ResultType, error)
+//
+// Invalid providers:
+//   - func (arg1 *Arg1Type) (error, *ResultType)
+//   - func (arg1 string) *ResultType
+//   - func (args ...int) (*ResultType, error)
 func (m *Manager) Provide(provider any) (err error) {
 	// Validate provider
 	rv := reflect.ValueOf(provider)
@@ -36,7 +56,8 @@ func (m *Manager) Provide(provider any) (err error) {
 	return
 }
 
-// MustProvide registers several providers to manager, all errors will be ignored.
+// MustProvide registers several type providers to manager.
+// Invalid providers will be skipped, and all errors will be ingored.
 //
 // Use this method ONLY when you are sure all providers are valid.
 func (m *Manager) MustProvide(providers ...any) {
