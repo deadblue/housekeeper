@@ -13,26 +13,6 @@ var (
 )
 
 // Provide registers type provider to manager.
-//
-// # Specification:
-//
-//   - Provider should be function.
-//   - Provider function must have at least one result.
-//   - The first result should be a pointer type, it will be treated as target value type.
-//   - The second or later result can be an error type, it will be treated as providing error.
-//   - When the function has parameters, all parameter types should be pointer type.
-//   - The function can not have a variadic parameter.
-//
-// # Example:
-//
-// Valid providers:
-//   - func () *ResultType
-//   - func (arg1 *Arg1Type, arg2 *Arg2Type) (*ResultType, error)
-//
-// Invalid providers:
-//   - func (arg1 *Arg1Type) (error, *ResultType)
-//   - func (arg1 string) *ResultType
-//   - func (args ...int) (*ResultType, error)
 func (m *Manager) Provide(provider any) (err error) {
 	// Validate provider
 	rv := reflect.ValueOf(provider)
@@ -66,7 +46,11 @@ func (m *Manager) MustProvide(providers ...any) {
 	}
 }
 
-func (m *Manager) provideValue(pt reflect.Type, stack ...string) (pv reflect.Value, err error) {
+func (m *Manager) provideValue(
+	ctxVal reflect.Value,
+	pt reflect.Type,
+	stack ...string,
+) (pv reflect.Value, err error) {
 	// Search provider
 	typeName := stack[0]
 	provider, found := m.providers[typeName]
@@ -77,20 +61,24 @@ func (m *Manager) provideValue(pt reflect.Type, stack ...string) (pv reflect.Val
 	}
 	// Prepare provider arguments
 	provType := provider.Type()
-	argCount := provType.NumIn()
-	args := make([]reflect.Value, argCount)
-	for i := range argCount {
-		args[i], err = m.getValue(provType.In(i), stack...)
-		if err != nil {
-			err = fmt.Errorf(
-				"resolve provider %s argument #%d failed: %w",
-				getTypeName(provType), i, err,
-			)
-			return
+	paramCount := provType.NumIn()
+	params := make([]reflect.Value, paramCount)
+	for i := range paramCount {
+		if paramType := provType.In(i); isContextType(paramType) {
+			params[i] = ctxVal
+		} else {
+			params[i], err = m.resolveValue(ctxVal, paramType, stack...)
+			if err != nil {
+				err = fmt.Errorf(
+					"resolve provider %s argument #%d failed: %w",
+					getTypeName(provType), i, err,
+				)
+				return
+			}
 		}
 	}
 	// Call provider
-	results := provider.Call(args)
+	results := provider.Call(params)
 	if err = findError(results); err == nil {
 		pv = results[0]
 	}

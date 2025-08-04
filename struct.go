@@ -10,7 +10,12 @@ const (
 	_TagAutowire = "autowire"
 )
 
-func (m *Manager) wireStructFields(st reflect.Type, sv reflect.Value, stack ...string) (err error) {
+func (m *Manager) wireStructFields(
+	ctxVal reflect.Value,
+	st reflect.Type,
+	sv reflect.Value,
+	stack ...string,
+) (err error) {
 	typeName := stack[0]
 	for index := range st.NumField() {
 		ft := st.Field(index)
@@ -24,7 +29,7 @@ func (m *Manager) wireStructFields(st reflect.Type, sv reflect.Value, stack ...s
 			continue
 		}
 		// Assign value to field
-		if val, err := m.getValue(ft.Type, stack...); err == nil {
+		if val, err := m.resolveValue(ctxVal, ft.Type, stack...); err == nil {
 			fv.Set(val)
 		} else {
 			// Breaks for loop and returns error

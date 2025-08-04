@@ -1,13 +1,28 @@
 package housekeeper_test
 
 import (
+	"context"
 	"fmt"
 	"log"
 
 	"github.com/deadblue/housekeeper"
 )
 
+type contextKey struct{}
+
+var configKey = contextKey{}
+
+type AppConfig struct {
+	DbUri string
+}
+
 type FooService struct{}
+
+func (f *FooService) Init(ctx context.Context) error {
+	config := ctx.Value(configKey).(*AppConfig)
+	fmt.Printf("[Foo] Connect tot database: %s.\n", config.DbUri)
+	return nil
+}
 
 func (f *FooService) GetName() string {
 	return "world"
@@ -15,44 +30,32 @@ func (f *FooService) GetName() string {
 
 // Close method will be called during housekeeper manager closing.
 func (f *FooService) Close() error {
-	fmt.Println("Shutdown foo service.")
+	fmt.Println("[Foo] Close database connection.")
 	return nil
 }
 
 type BarService struct{}
 
 func (b *BarService) Greet(name string) {
-	fmt.Printf("Hello, %s!\n", name)
+	fmt.Printf("[Bar] Hello, %s!\n", name)
 }
 
 // Custom provider for BarService.
-func newBarService() (bar *BarService, err error) {
-	fmt.Println("Provide BarService through custom provider.")
-	bar = &BarService{}
-	// You can return error when provide BarService failed
-	return
+func newBarService() *BarService {
+	fmt.Println("[Bar] Provide via newBarService.")
+	return &BarService{}
 }
 
 type App struct {
-	// Foo service will be assigned in Init method.
-	foo *FooService
-	// Bar field with autowre tag will be automatically assigned by housekeeper.
-	// Autowire field should be exported.
+	// Fields with autowre tag will be assigned by housekeeper.
+	// Autowire fields should be exported.
+
+	Foo *FooService `autowire:""`
 	Bar *BarService `autowire:""`
 }
 
-// Init method will be called by housekeeper during making App value.
-// Init method should be exported.
-func (a *App) Init(foo *FooService) (err error) {
-	fmt.Println("Initialize app with foo service.")
-	a.foo = foo
-	// You can return error init failed
-	return nil
-}
-
 func (a *App) Run() {
-	name := a.foo.GetName()
-	a.Bar.Greet(name)
+	a.Bar.Greet(a.Foo.GetName())
 }
 
 func Example() {
@@ -61,21 +64,24 @@ func Example() {
 	defer mgr.Close()
 
 	// Register custom provider for BarService
-	if err := mgr.Provide(newBarService); err != nil {
-		log.Fatalf("Register provider failed: %s", err)
-	}
+	mgr.MustProvide(newBarService)
+
+	// Prepare config
+	ctx := context.WithValue(context.TODO(), configKey, &AppConfig{
+		DbUri: "mysql://127.0.0.1:3306/mydb",
+	})
 
 	// Assemble app and run it
 	var app *App
-	if err := mgr.Get(&app); err != nil {
+	if err := mgr.GetWithContext(ctx, &app); err != nil {
 		log.Fatalf("Get app value failed: %s\n", err)
 	} else {
 		app.Run()
 	}
 
 	// Output:
-	// Provide BarService through custom provider.
-	// Initialize app with foo service.
-	// Hello, world!
-	// Shutdown foo service.
+	// [Foo] Connect tot database: mysql://127.0.0.1:3306/mydb.
+	// [Bar] Provide via newBarService.
+	// [Bar] Hello, world!
+	// [Foo] Close database connection.
 }

@@ -2,13 +2,9 @@ package housekeeper
 
 import "reflect"
 
-var (
-	errorType = reflect.TypeFor[error]()
-)
-
 func findError(vals []reflect.Value) error {
 	for _, val := range vals {
-		if val.Type().AssignableTo(errorType) {
+		if isErrorType(val.Type()) {
 			if val.IsNil() {
 				return nil
 			} else {

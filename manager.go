@@ -1,6 +1,7 @@
 package housekeeper
 
 import (
+	"context"
 	"io"
 	"reflect"
 )
@@ -14,15 +15,23 @@ type Manager struct {
 	options options
 }
 
-// Get returns value from manager.
+// Get resolves value from manager.
+//
 // The ptrptr should be a pointer to pointer to target value.
 func (m *Manager) Get(ptrptr any) (err error) {
+	return m.GetWithContext(context.TODO(), ptrptr)
+}
+
+// GetWithContext resolves value from manager with context.
+//
+// The ptrptr should be a pointer to pointer to target value.
+func (m *Manager) GetWithContext(ctx context.Context, ptrptr any) (err error) {
 	pv := reflect.ValueOf(ptrptr)
 	pt := pv.Type()
 	if err = assertPtrToPtrType(pt); err != nil {
 		return
 	}
-	v, err := m.getValue(pt.Elem())
+	v, err := m.resolveValue(reflect.ValueOf(ctx), pt.Elem())
 	if err == nil {
 		pv.Elem().Set(v)
 	}
@@ -62,6 +71,8 @@ func (m *Manager) Close() (err error) {
 }
 
 // GetFrom gets value from manager with generic support.
+//
+// Deprecated: Use Get/GetWithContext instead.
 func GetFrom[V any](m *Manager) (value *V, err error) {
 	err = m.Get(&value)
 	return
