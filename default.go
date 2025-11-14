@@ -36,7 +36,7 @@ func Put(ptr any) error {
 
 // MustPut puts several values to default manager, and ignores all errors.
 func MustPut(ptrs ...any) {
-	defaultManager.MustProvide(ptrs...)
+	defaultManager.MustPut(ptrs...)
 }
 
 // Provide registers type provider to default manager.
