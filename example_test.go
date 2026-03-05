@@ -73,7 +73,7 @@ func Example() {
 
 	// Assemble app and run it
 	var app *App
-	if err := mgr.GetWithContext(ctx, &app); err != nil {
+	if err := mgr.Get(ctx, &app); err != nil {
 		log.Fatalf("Get app value failed: %s\n", err)
 	} else {
 		app.Run()

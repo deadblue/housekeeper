@@ -8,24 +8,13 @@ var (
 )
 
 // Get gets value from default manager.
-func Get(ptrptr any) error {
-	return defaultManager.Get(ptrptr)
-}
-
-// GetWithContext gets value from default manager.
-func GetWithContext(ctx context.Context, ptrptr any) error {
-	return defaultManager.GetWithContext(ctx, ptrptr)
+func Get(ctx context.Context, ptrptr any) error {
+	return defaultManager.Get(ctx, ptrptr)
 }
 
 // GetFor gets a pointer value of the type V, from default manager.
-func GetFor[V any]() (value *V, err error) {
-	err = defaultManager.Get(&value)
-	return
-}
-
-// GetFor gets a pointer value of the type V, from default manager.
-func GetWithContextFor[V any](ctx context.Context) (value *V, err error) {
-	err = defaultManager.GetWithContext(ctx, &value)
+func GetFor[V any](ctx context.Context) (value *V, err error) {
+	err = defaultManager.Get(ctx, &value)
 	return
 }
 
