@@ -16,17 +16,11 @@ type Manager struct {
 }
 
 // Get resolves value from manager.
-//
-// The ptrptr should be a pointer to pointer to target value.
-func (m *Manager) Get(ctx context.Context, ptrptr any) (err error) {
-	pv := reflect.ValueOf(ptrptr)
-	pt := pv.Type()
-	if err = assertPtrToPtrType(pt); err != nil {
-		return
-	}
-	v, err := m.resolveValue(reflect.ValueOf(ctx), pt.Elem())
+func (m *Manager) Get[V any](ctx context.Context) (value *V, err error) {
+	pt := reflect.TypeOf(value)
+	v, err := m.resolveValue(reflect.ValueOf(ctx), pt)
 	if err == nil {
-		pv.Elem().Set(v)
+		value = v.Interface().(*V)
 	}
 	return
 }

@@ -7,15 +7,9 @@ var (
 	defaultManager = New()
 )
 
-// Get gets value from default manager.
-func Get(ctx context.Context, ptrptr any) error {
-	return defaultManager.Get(ctx, ptrptr)
-}
-
 // GetFor gets a pointer value of the type V, from default manager.
-func GetFor[V any](ctx context.Context) (value *V, err error) {
-	err = defaultManager.Get(ctx, &value)
-	return
+func Get[V any](ctx context.Context) (value *V, err error) {
+	return defaultManager.Get[V](ctx)
 }
 
 // Put puts value to default manager, the ptr argument should be a pointer to value.
